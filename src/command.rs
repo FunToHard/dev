@@ -39,10 +39,14 @@ impl CommandBuilder {
     #[cfg(windows)]
     fn create_dev_command() -> Command {
         let mut command = Command::new("cmd");
+        // Use /C to run command and return, but we need to handle process tree killing
         command.arg("/C").arg("pnpm dev");
         if let Ok(cd) = env::current_dir() {
             command.current_dir(cd);
         }
+        // Set up process group for proper cleanup
+        use std::os::windows::process::CommandExt;
+        command.creation_flags(0x00000200); // CREATE_NEW_PROCESS_GROUP
         command
     }
 

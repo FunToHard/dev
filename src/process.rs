@@ -33,24 +33,43 @@ impl ProcessManager {
     }
 
     pub fn kill_and_wait(&mut self, timeout: Duration) -> Result<()> {
-        // Try to kill first
+        println!("🛑 Terminating process...");
+        
+        // On Windows, try to terminate the process tree
+        #[cfg(windows)]
+        {
+            let pid = self.child.id();
+            // Use taskkill to terminate the process tree
+            let _ = std::process::Command::new("taskkill")
+                .args(["/F", "/T", "/PID", &pid.to_string()])
+                .output();
+        }
+        
+        // Try to kill the direct child process
         if let Err(e) = self.child.kill() {
             // If kill fails because process already exited, that's fine; otherwise return error
             match e.kind() {
                 std::io::ErrorKind::InvalidInput => {
                     // On Windows, InvalidInput may indicate the process has already exited
+                    println!("Process already exited");
                 }
-                _ => return Err(ServerError::ProcessManagement(e.to_string())),
+                _ => {
+                    eprintln!("Failed to kill process: {}", e);
+                    return Err(ServerError::ProcessManagement(e.to_string()));
+                }
             }
         }
 
         let start = Instant::now();
         loop {
             match self.child.try_wait() {
-                Ok(Some(_)) => return Ok(()),
+                Ok(Some(status)) => {
+                    println!("✅ Process terminated with status: {}", status);
+                    return Ok(());
+                }
                 Ok(None) => {
                     if start.elapsed() >= timeout {
-                        // Give up waiting
+                        println!("⚠️ Process didn't terminate within timeout, giving up");
                         return Ok(());
                     }
                     thread::sleep(Duration::from_millis(50));

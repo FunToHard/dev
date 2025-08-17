@@ -16,7 +16,7 @@ impl Default for Config {
             restart_delay: Duration::from_secs(2),
             error_delay: Duration::from_secs(5),
             process_check_interval: Duration::from_millis(100),
-            shutdown_timeout: Duration::from_secs(2),
+            shutdown_timeout: Duration::from_secs(5), // Increased from 2 to 5 seconds
             error_pattern: "[Error".to_string(),
         }
     }
