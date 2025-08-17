@@ -1,50 +1,79 @@
 # Dev Server Monitor
 
-A robust development server monitor that automatically restarts your server when errors are detected.
+A robust development server monitor that automatically restarts processes when errors are detected in their output.
 
-## Features
+## Architecture
 
-- 🔍 Monitors server output for error patterns
-- 🔄 Automatic server restart on error detection
-- 📝 Configurable error pattern detection
-- 🧪 Test mode for functionality verification
-- 📊 Process status monitoring
-- 🚦 Separate stdout and stderr monitoring
+The application has been refactored into a modular, maintainable structure:
 
-## Installation
+### Modules
 
-1. Make sure you have Rust installed on your system
-2. Clone this repository
-3. Build the project:
-```bash
-cargo build --release
-```
+- **`main.rs`** - Entry point and CLI argument parsing
+- **`config.rs`** - Configuration management and constants
+- **`error.rs`** - Custom error types and error handling
+- **`command.rs`** - Command builder for different execution modes
+- **`process.rs`** - Process lifecycle management
+- **`monitor.rs`** - Output monitoring and pattern detection
+- **`server.rs`** - Main server orchestration logic
+
+### Key Features
+
+- **Modular Design**: Each module has a single responsibility
+- **Error Handling**: Comprehensive error types with proper propagation
+- **Configuration**: Centralized configuration with builder pattern
+- **Cross-Platform**: Supports both Windows and Unix-like systems
+- **Test Mode**: Built-in test mode for validation
 
 ## Usage
 
-### Basic Usage
+### Normal Mode (monitors `pnpm dev`)
 ```bash
-# Start monitoring your dev server
-dev
-
-# Run in test mode
-dev --test
+cargo run
 ```
 
-### Environment Setup
-
-Add the executable to your PATH:
+### Test Mode (simulates error scenarios)
 ```bash
-# Windows (PowerShell)
-$env:Path += ";path\to\nextdev\target\release"
+cargo run -- --test
 ```
 
 ## Configuration
 
-The monitor watches for `[Error` patterns by default. Key constants:
-- Restart Delay: 2 seconds
-- Error Recovery Delay: 5 seconds
-- Process Check Interval: 100ms
+The `Config` struct provides several customization options:
+
+```rust
+let config = Config::new()
+    .with_error_pattern("[Error")
+    .with_restart_delay(Duration::from_secs(2))
+    .with_error_delay(Duration::from_secs(5));
+```
+
+## Error Detection
+
+The monitor watches both stdout and stderr for the configured error pattern (default: `[Error`). When detected:
+
+1. The current process is gracefully terminated
+2. A restart delay is applied
+3. The process is restarted with a new attempt counter
+
+## Benefits of the Refactored Architecture
+
+1. **Maintainability**: Code is organized into logical modules
+2. **Testability**: Each module can be tested independently
+3. **Extensibility**: New features can be added without affecting existing code
+4. **Reusability**: Components can be reused in other projects
+5. **Error Handling**: Proper error propagation and handling throughout
+6. **Configuration**: Easy to modify behavior without code changes
+
+## Future Enhancements
+
+The modular structure makes it easy to add:
+
+- Configuration file support
+- Multiple error patterns
+- Custom restart strategies
+- Logging integration
+- Performance metrics
+- Health checks
 
 ## Requirements
 
