@@ -2,6 +2,7 @@ use std::thread;
 
 use crate::command::{CommandBuilder, CommandType};
 use crate::config::Config;
+use crate::cli_config::CliConfig;
 use crate::error::Result;
 use crate::monitor::ProcessMonitor;
 use crate::process::ProcessManager;
@@ -9,15 +10,28 @@ use crate::process::ProcessManager;
 /// Main server management logic
 pub struct DevServer {
     config: Config,
+    cli_config: Option<CliConfig>,
     test_mode: bool,
 }
 
 impl DevServer {
     pub fn new(config: Config, test_mode: bool) -> Self {
-        Self { config, test_mode }
+        Self { 
+            config, 
+            cli_config: None,
+            test_mode 
+        }
     }
 
-    pub fn run(&self) -> Result<()> {
+    pub fn run(&mut self) -> Result<()> {
+        // Load CLI configuration if not in test mode
+        if !self.test_mode {
+            let cli_config = CliConfig::load_or_create()?;
+            // Update the error pattern from CLI config
+            self.config.error_pattern = cli_config.error_pattern.clone();
+            self.cli_config = Some(cli_config);
+        }
+
         self.print_startup_info();
 
         let mut restart_count = 0;
@@ -51,7 +65,7 @@ impl DevServer {
         let command_type = if self.test_mode {
             CommandType::Test
         } else {
-            CommandType::Dev
+            CommandType::Dev(self.cli_config.as_ref().unwrap().clone())
         };
 
         let command = CommandBuilder::build(command_type);
@@ -62,9 +76,12 @@ impl DevServer {
     fn print_startup_info(&self) {
         if self.test_mode {
             println!("🧪 Running in test mode");
+        } else if let Some(cli_config) = &self.cli_config {
+            println!("🚀 Starting dev server monitor for: {}", cli_config.run_command);
+        } else {
+            println!("🚀 Starting dev server monitor...");
         }
 
-        println!("🚀 Starting dev server monitor...");
         println!(
             "Monitoring for '{}' in output - will restart on detection",
             self.config.error_pattern

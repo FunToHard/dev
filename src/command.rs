@@ -1,10 +1,12 @@
 use std::process::Command;
 use std::env;
 
+use crate::cli_config::CliConfig;
+
 /// Represents different types of commands that can be executed
 pub enum CommandType {
     Test,
-    Dev,
+    Dev(CliConfig),
 }
 
 /// Command builder for creating process commands
@@ -14,7 +16,7 @@ impl CommandBuilder {
     pub fn build(command_type: CommandType) -> Command {
         match command_type {
             CommandType::Test => Self::create_test_command(),
-            CommandType::Dev => Self::create_dev_command(),
+            CommandType::Dev(config) => Self::create_dev_command(config),
         }
     }
 
@@ -37,10 +39,10 @@ impl CommandBuilder {
     }
 
     #[cfg(windows)]
-    fn create_dev_command() -> Command {
+    fn create_dev_command(config: CliConfig) -> Command {
         let mut command = Command::new("cmd");
         // Use /C to run command and return, but we need to handle process tree killing
-        command.arg("/C").arg("pnpm dev");
+        command.arg("/C").arg(&config.run_command);
         if let Ok(cd) = env::current_dir() {
             command.current_dir(cd);
         }
@@ -51,9 +53,9 @@ impl CommandBuilder {
     }
 
     #[cfg(not(windows))]
-    fn create_dev_command() -> Command {
+    fn create_dev_command(config: CliConfig) -> Command {
         let mut command = Command::new("sh");
-        command.arg("-c").arg("pnpm dev");
+        command.arg("-c").arg(&config.run_command);
         if let Ok(cd) = env::current_dir() {
             command.current_dir(cd);
         }
