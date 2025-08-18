@@ -12,6 +12,7 @@ pub struct DevServer {
     config: Config,
     cli_config: Option<CliConfig>,
     test_mode: bool,
+    child_pid_handle: Option<std::sync::Arc<std::sync::Mutex<Option<u32>>>>,
 }
 
 impl DevServer {
@@ -19,8 +20,13 @@ impl DevServer {
         Self { 
             config, 
             cli_config: None,
-            test_mode 
+            test_mode,
+            child_pid_handle: None,
         }
+    }
+
+    pub fn set_child_pid_handle(&mut self, handle: std::sync::Arc<std::sync::Mutex<Option<u32>>>) {
+        self.child_pid_handle = Some(handle);
     }
 
     pub fn run(&mut self) -> Result<()> {
@@ -69,7 +75,11 @@ impl DevServer {
         };
 
         let command = CommandBuilder::build(command_type);
-        let process = ProcessManager::spawn(command)?;
+        let process = if let Some(ref pid_handle) = self.child_pid_handle {
+            ProcessManager::spawn_with_pid_handle(command, pid_handle.clone())?
+        } else {
+            ProcessManager::spawn(command)?
+        };
         monitor.monitor(process)
     }
 

@@ -20,6 +20,20 @@ impl ProcessManager {
         Ok(Self { child })
     }
 
+    pub fn spawn_with_pid_handle(mut command: std::process::Command, pid_handle: std::sync::Arc<std::sync::Mutex<Option<u32>>>) -> Result<Self> {
+        let child = command
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .map_err(|e| ServerError::ProcessStart(e.to_string()))?;
+        // Set the PID in the Arc
+        {
+            let mut pid_lock = pid_handle.lock().unwrap();
+            *pid_lock = Some(child.id());
+        }
+        Ok(Self { child })
+    }
+
     pub fn take_stdout(&mut self) -> Option<std::process::ChildStdout> {
         self.child.stdout.take()
     }

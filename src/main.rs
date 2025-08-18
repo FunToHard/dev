@@ -11,17 +11,19 @@ mod cli_config;
 use config::Config;
 use server::DevServer;
 
+use std::sync::{Arc, Mutex};
+
 fn main() {
     let args: Vec<String> = env::args().collect();
     let test_mode = args.iter().any(|arg| arg == "--test");
     let config_mode = args.iter().any(|arg| arg == "--config");
     let help_mode = args.iter().any(|arg| arg == "--help" || arg == "-h");
-    
+
     if help_mode {
         print_help();
         return;
     }
-    
+
     if config_mode {
         println!("🔧 Reconfiguring dev-cli.json...");
         if let Err(e) = create_config_interactive() {
@@ -30,10 +32,39 @@ fn main() {
         }
         return;
     }
-    
+
+    // Shared PID for child process
+    let child_pid: Arc<Mutex<Option<u32>>> = Arc::new(Mutex::new(None));
+
+    // Register Ctrl+C handler
+    {
+        let child_pid = Arc::clone(&child_pid);
+        ctrlc::set_handler(move || {
+            let pid = *child_pid.lock().unwrap();
+            #[cfg(windows)]
+            if let Some(pid) = pid {
+                println!("🛑 Ctrl+C pressed! Killing process tree (PID {})...", pid);
+                let _ = std::process::Command::new("taskkill")
+                    .args(["/F", "/T", "/PID", &pid.to_string()])
+                    .output();
+            }
+            #[cfg(not(windows))]
+            if let Some(pid) = pid {
+                println!("🛑 Ctrl+C pressed! Killing process (PID {})...", pid);
+                let _ = std::process::Command::new("kill")
+                    .arg("-9")
+                    .arg(pid.to_string())
+                    .output();
+            }
+            std::process::exit(130);
+        }).expect("Failed to set Ctrl+C handler");
+    }
+
     let config = Config::new();
     let mut server = DevServer::new(config, test_mode);
-    
+    // Pass the child_pid Arc to the server so it can update the PID
+    server.set_child_pid_handle(child_pid);
+
     if let Err(e) = server.run() {
         eprintln!("❌ Server error: {}", e);
         std::process::exit(1);
