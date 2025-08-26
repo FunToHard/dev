@@ -60,7 +60,7 @@ The CLI creates a `dev-cli.json` file in your project directory:
 }
 ```
 
-This makes the tool completely portable - just copy the executable to any project and it will work with that project's specific configuration.
+This makes the tool completely portable - just copy the executable to any project or set it up as environment variable and it will work with that project's specific configuration.
 
 ## 🏗️ Architecture
 
