@@ -3,7 +3,7 @@ use std::sync::mpsc::{self, Receiver, Sender};
 use std::thread::{self, JoinHandle};
 
 use crate::config::Config;
-use crate::error::{ServerError, Result};
+use crate::error::{Result, ServerError};
 use crate::process::ProcessManager;
 
 /// Messages passed between monitoring threads and the main loop
