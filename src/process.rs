@@ -1,8 +1,8 @@
 use std::process::{Child, Stdio};
-use std::time::{Duration, Instant};
 use std::thread;
+use std::time::{Duration, Instant};
 
-use crate::error::{ServerError, Result};
+use crate::error::{Result, ServerError};
 
 /// Manages the lifecycle of a child process
 pub struct ProcessManager {
@@ -20,7 +20,10 @@ impl ProcessManager {
         Ok(Self { child })
     }
 
-    pub fn spawn_with_pid_handle(mut command: std::process::Command, pid_handle: std::sync::Arc<std::sync::Mutex<Option<u32>>>) -> Result<Self> {
+    pub fn spawn_with_pid_handle(
+        mut command: std::process::Command,
+        pid_handle: std::sync::Arc<std::sync::Mutex<Option<u32>>>,
+    ) -> Result<Self> {
         let child = command
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
@@ -48,7 +51,7 @@ impl ProcessManager {
 
     pub fn kill_and_wait(&mut self, timeout: Duration) -> Result<()> {
         println!("🛑 Terminating process...");
-        
+
         // On Windows, try to terminate the process tree
         #[cfg(windows)]
         {
@@ -58,7 +61,7 @@ impl ProcessManager {
                 .args(["/F", "/T", "/PID", &pid.to_string()])
                 .output();
         }
-        
+
         // Try to kill the direct child process
         if let Err(e) = self.child.kill() {
             // If kill fails because process already exited, that's fine; otherwise return error
