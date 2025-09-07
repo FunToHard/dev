@@ -1,12 +1,12 @@
 use std::env;
 
+mod cli_config;
+mod command;
 mod config;
 mod error;
-mod command;
-mod process;
 mod monitor;
+mod process;
 mod server;
-mod cli_config;
 
 use config::Config;
 use server::DevServer;
@@ -57,7 +57,8 @@ fn main() {
                     .output();
             }
             std::process::exit(130);
-        }).expect("Failed to set Ctrl+C handler");
+        })
+        .expect("Failed to set Ctrl+C handler");
     }
 
     let config = Config::new();
@@ -104,17 +105,17 @@ fn print_help() {
 fn create_config_interactive() -> std::result::Result<(), Box<dyn std::error::Error>> {
     use crate::cli_config::CliConfig;
     use std::fs;
-    
+
     // Remove existing config if it exists
     if std::path::Path::new("dev-cli.json").exists() {
         fs::remove_file("dev-cli.json")?;
         println!("📄 Removed existing dev-cli.json");
     }
-    
+
     // Create new config
     let _config = CliConfig::load_or_create()?;
     println!("✅ Configuration complete! You can now run 'dev' to start monitoring.");
-    
+
     Ok(())
 }
 #[cfg(test)]

@@ -62,7 +62,7 @@ mod tests {
             .with_error_pattern("ERROR")
             .with_restart_delay(Duration::from_secs(1))
             .with_error_delay(Duration::from_secs(3));
-        
+
         assert_eq!(config.error_pattern, "ERROR");
         assert_eq!(config.restart_delay, Duration::from_secs(1));
         assert_eq!(config.error_delay, Duration::from_secs(3));

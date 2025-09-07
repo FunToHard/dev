@@ -1,8 +1,8 @@
 use std::thread;
 
+use crate::cli_config::CliConfig;
 use crate::command::{CommandBuilder, CommandType};
 use crate::config::Config;
-use crate::cli_config::CliConfig;
 use crate::error::Result;
 use crate::monitor::ProcessMonitor;
 use crate::process::ProcessManager;
@@ -17,8 +17,8 @@ pub struct DevServer {
 
 impl DevServer {
     pub fn new(config: Config, test_mode: bool) -> Self {
-        Self { 
-            config, 
+        Self {
+            config,
             cli_config: None,
             test_mode,
             child_pid_handle: None,
@@ -87,7 +87,10 @@ impl DevServer {
         if self.test_mode {
             println!("🧪 Running in test mode");
         } else if let Some(cli_config) = &self.cli_config {
-            println!("🚀 Starting dev server monitor for: {}", cli_config.run_command);
+            println!(
+                "🚀 Starting dev server monitor for: {}",
+                cli_config.run_command
+            );
         } else {
             println!("🚀 Starting dev server monitor...");
         }
